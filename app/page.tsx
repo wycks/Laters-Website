@@ -11,7 +11,7 @@ export default function LandingPage() {
       {/* Contact link */}
       <div className="absolute right-8 top-8 z-10">
         <Link
-          href="/contact"
+          href="mailto:sean@laters.life"
           className="rounded-md border border-white/20 bg-white/10 px-4 py-2 font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
         >
           Contact
