@@ -21,10 +21,9 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-  // Add these for GitHub Pages
+  // GitHub Pages with custom domain
   output: 'export',
-  basePath: process.env.NODE_ENV === 'production' ? '/Laters-Website' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/Laters-Website/' : '',
+  // basePath and assetPrefix are not needed with custom domain
 }
 
 mergeConfig(nextConfig, userConfig)
