@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.font-serif {
+  font-family: var(--font-playfair), serif;
+}
+
