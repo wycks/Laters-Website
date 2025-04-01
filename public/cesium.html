@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Hong Kong Tourist Map - CesiumJS</title>
+    <!-- Include CesiumJS -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.106/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.106/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        #destinationList {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(42, 42, 42, 0.8); /* Darker background */
+            color: white; /* White text */
+            border: 1px solid #888;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1;
+            max-height: 80vh;
+            overflow-y: auto;
+            font-family: sans-serif;
+        }
+         #destinationList h2 { margin-top: 0; border-bottom: 1px solid #aaa; padding-bottom: 5px; }
+         #destinationList ul { list-style-type: none; padding: 0; margin: 0; }
+         #destinationList li { cursor: pointer; padding: 6px 3px; border-radius: 3px; }
+         #destinationList li:hover { background-color: rgba(80, 80, 80, 0.9); }
+         #destinationList button { margin-top: 10px; margin-right: 5px; padding: 5px 10px; background-color: #555; color: white; border: 1px solid #888; border-radius: 3px; cursor: pointer;}
+         #destinationList button:hover { background-color: #777; }
+
+         /* Make default Cesium selection indicator less obtrusive */
+         .cesium-viewer-selectionIndicatorContainer { display: none !important; }
+
+    </style>
+</head>
+<body>
+    <div id="destinationList">
+        <h2>Tourist Destinations</h2>
+        <ul>
+            <!-- Populated by JS -->
+        </ul>
+        <button onclick="highlightAll()">Highlight All</button>
+        <button onclick="resetView()">Reset View & Route</button>
+    </div>
+    <div id="cesiumContainer"></div>
+    <script>
+        // Grant CesiumJS access to your Ion account via Access Token
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5NDVlN2VlMS1jZTEyLTQyYTUtOGJlYS0wNTNiMjY5YjAwMzIiLCJpZCI6MjkwMDU3LCJpYXQiOjE3NDM1Mjk5MjZ9.r1FpVDStk6307UfoZ2BX-uIxQYTbXm8GeDvkwAGAwjg'; // <-- PASTE YOUR TOKEN HERE!
+
+        // --- Destination Data ---
+        const destinationsData = [
+            // Cesium uses [longitude, latitude, optional height]
+            { name: "Victoria Peak", coordinates: [114.1495, 22.2793, 552] }, // Added approx height
+            { name: "Tian Tan Buddha", coordinates: [113.9058, 22.2575, 480] }, // Added approx height base
+            { name: "Lantau Island (General)", coordinates: [113.9, 22.25, 100] },
+            { name: "Avenue of Stars", coordinates: [114.1720, 22.2920, 10] },
+            { name: "Hong Kong Disneyland", coordinates: [114.0353, 22.3131, 10] },
+            { name: "Temple Street Night Market", coordinates: [114.1692, 22.3067, 10] },
+            { name: "Ocean Park Hong Kong", coordinates: [114.1725, 22.2450, 50] }, // Approx hill height
+            { name: "Man Mo Temple (Sheung Wan)", coordinates: [114.1517, 22.2848, 40] },
+            { name: "Tsim Sha Tsui Promenade", coordinates: [114.1700, 22.2930, 10] },
+            { name: "Wong Tai Sin Temple", coordinates: [114.1882, 22.3422, 20] }
+        ];
+
+        const initialCameraLocation = Cesium.Cartesian3.fromDegrees(114.1694, 22.20, 15000); // Lon, Lat, Height (meters)
+        const initialOrientation = {
+             heading : Cesium.Math.toRadians(0.0), // Angle east of North
+             pitch : Cesium.Math.toRadians(-35.0), // Angle looking down
+             roll : 0.0
+         };
+
+        // --- Initialize Cesium Viewer ---
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(), // Use Cesium World Terrain
+            // Use Cesium OSM Buildings
+             baseLayerPicker: false, // Don't show base layer picker widget
+             geocoder: false, // Don't show geocoder widget
+             homeButton: false, // Don't show home button widget
+             sceneModePicker: false, // Don't show scene mode picker widget
+             navigationHelpButton: false, // Don't show navigation help widget
+             animation: false, // Don't show animation widget
+             timeline: false, // Don't show timeline widget
+             fullscreenButton: true, // Show fullscreen button
+             // selectionIndicator: false, // Disable selection indicator (doesn't work reliably, hide with CSS)
+             infoBox: false, // Disable infobox on click
+             requestRenderMode : true, // Optimize rendering - only render when needed
+             maximumRenderTimeChange : Infinity,
+        });
+
+         // Add Cesium OSM Buildings
+        viewer.scene.primitives.add(Cesium.createOsmBuildings());
+
+        // Fly the camera to the initial view
+        viewer.camera.flyTo({
+            destination : initialCameraLocation,
+            orientation : initialOrientation,
+            duration: 0 // Fly immediately on load
+        });
+
+
+        // --- Markers (Entities) & List ---
+        const destinationEntities = [];
+        const destinationListUl = document.querySelector('#destinationList ul');
+        const defaultPointColor = Cesium.Color.RED;
+        const routeHighlightColor = Cesium.Color.LIME;
+        const allHighlightColor = Cesium.Color.YELLOW;
+        const pointPixelSize = 10;
+
+        destinationsData.forEach((data, index) => {
+            // Create List Item
+            const li = document.createElement('li');
+            li.textContent = data.name;
+            li.setAttribute('data-index', index);
+            li.addEventListener('click', () => {
+                handleDestinationSelection(index);
+            });
+            destinationListUl.appendChild(li);
+
+            // Create Cesium Entity (Marker)
+            const position = Cesium.Cartesian3.fromDegrees(data.coordinates[0], data.coordinates[1], data.coordinates[2] || 0); // Lon, Lat, Height
+            const entity = viewer.entities.add({
+                position: position,
+                point: {
+                    pixelSize: pointPixelSize,
+                    color: defaultPointColor,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2,
+                    // disableDepthTestDistance: Number.POSITIVE_INFINITY // See through terrain
+                },
+                properties: { // Store original data
+                    name: data.name,
+                    index: index,
+                    coordinates: data.coordinates
+                }
+                // Optional: Add label
+                 /* label : {
+                     text : data.name,
+                     font : '12pt sans-serif',
+                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                     outlineWidth : 2,
+                     verticalOrigin : Cesium.VerticalOrigin.BOTTOM,
+                     pixelOffset : new Cesium.Cartesian2(0, -12) // Offset label above point
+                 } */
+            });
+            destinationEntities.push(entity);
+        });
+
+
+        // --- Interaction & Navigation ---
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        let selectedRouteIndices = []; // Array of entity indices for the route
+        let routeLineEntity = null;
+
+         // Handle clicks on entities
+        handler.setInputAction(function (movement) {
+            const pickedObject = viewer.scene.pick(movement.position);
+            if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id) && pickedObject.id.point) {
+                 // Check if the picked object is one of our destination entities
+                 const clickedEntity = pickedObject.id;
+                 if (clickedEntity.properties && Cesium.defined(clickedEntity.properties.index)) {
+                      handleDestinationSelection(clickedEntity.properties.index.getValue());
+                 }
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        function handleDestinationSelection(index) {
+            const entity = destinationEntities[index];
+            if (!entity) return;
+
+            navigateToDestination(entity);
+            highlightEntity(entity, 'route');
+
+            selectedRouteIndices.push(index);
+
+            if (selectedRouteIndices.length >= 2) {
+                drawRoute(selectedRouteIndices);
+                 // Start new route from this point
+                 selectedRouteIndices = [index];
+                 // Keep only the last marker highlighted green
+                 resetEntityStyles(entity);
+            } else {
+                 // First point, clear route and reset highlights keeping current
+                 resetRouteLine();
+                 resetEntityStyles(entity);
+            }
+             viewer.scene.requestRender(); // Request render after change
+        }
+
+        function navigateToDestination(entity) {
+            viewer.flyTo(entity, {
+                duration: 2.0, // seconds
+                offset: new Cesium.HeadingPitchRange(
+                    Cesium.Math.toRadians(0.0), // Heading
+                    Cesium.Math.toRadians(-45.0), // Pitch angle looking down
+                    4000 // Range/distance from target in meters
+                )
+            });
+        }
+
+        // --- Highlighting & Styling ---
+        function highlightEntity(entity, type = 'route') {
+             if (!entity || !entity.point) return;
+             let targetColor = defaultPointColor;
+             if (type === 'route') {
+                 targetColor = routeHighlightColor;
+             } else if (type === 'all') {
+                 targetColor = allHighlightColor;
+             }
+             entity.point.color = targetColor;
+        }
+
+         // Reset styles of all entities, optionally keeping one highlighted
+        function resetEntityStyles(keepHighlightedEntity = null) {
+             destinationEntities.forEach(e => {
+                 if (e !== keepHighlightedEntity) {
+                      highlightEntity(e, 'default'); // Reset to default color
+                 } else if (keepHighlightedEntity) {
+                      highlightEntity(keepHighlightedEntity, 'route'); // Ensure kept one is route highlighted
+                 }
+             });
+             // Ensure route indices match kept entity
+             if (keepHighlightedEntity && keepHighlightedEntity.properties) {
+                  selectedRouteIndices = [keepHighlightedEntity.properties.index.getValue()];
+             } else if (!keepHighlightedEntity) {
+                 selectedRouteIndices = [];
+             }
+              viewer.scene.requestRender(); // Request render after change
+         }
+
+
+        // Highlight All button
+        window.highlightAll = function() {
+            resetRouteLine();
+            resetEntityStyles(); // Clear route selection first
+            destinationEntities.forEach(e => highlightEntity(e, 'all'));
+            viewer.scene.requestRender();
+        }
+
+        // Reset View button
+        window.resetView = function() {
+            resetRouteLine();
+            resetEntityStyles();
+            viewer.camera.flyTo({
+                destination : initialCameraLocation,
+                orientation : initialOrientation,
+                duration: 1.5 // seconds
+            });
+        }
+
+        // --- Route Drawing ---
+        function drawRoute(indices) {
+            resetRouteLine(); // Clear existing line first
+
+            const positions = indices.map(index => destinationEntities[index].position.getValue(viewer.clock.currentTime));
+
+            if (positions.length < 2) return;
+
+            routeLineEntity = viewer.entities.add({
+                polyline: {
+                    positions: positions,
+                    width: 3,
+                    material: Cesium.Color.BLUE,
+                    clampToGround: true // Drape polyline on terrain
+                }
+            });
+            viewer.scene.requestRender();
+        }
+
+        function resetRouteLine() {
+            if (routeLineEntity) {
+                viewer.entities.remove(routeLineEntity);
+                routeLineEntity = null;
+                viewer.scene.requestRender();
+            }
+        }
+
+         // Trigger initial render
+         viewer.scene.requestRender();
+
+    </script>
+</body>
+</html>
