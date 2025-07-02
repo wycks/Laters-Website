@@ -6,3 +6,40 @@
   font-family: var(--font-playfair), serif;
 }
 
+/* Hide Google Form scrollbars and footer elements */
+.google-form-iframe {
+  border: none !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+.google-form-iframe::-webkit-scrollbar {
+  display: none !important;
+}
+
+.google-form-iframe {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Hide Google Form footer elements */
+.google-form-iframe iframe {
+  border: none !important;
+}
+
+/* Additional styles to hide Google Form elements */
+iframe[src*="docs.google.com"] {
+  border: none !important;
+  overflow: hidden !important;
+}
+
+/* Hide scrollbars in all iframes */
+iframe::-webkit-scrollbar {
+  display: none !important;
+}
+
+iframe {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
