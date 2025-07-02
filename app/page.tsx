@@ -21,7 +21,35 @@ export default function LandingPage() {
       {/* Main content */}
       <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
         <h1 className="font-serif text-6xl font-bold tracking-tight text-white md:text-8xl">laters.life</h1>
-        <p className="mt-6 text-xl font-light text-white/80">coming soon</p>
+        <p className="mt-6 text-xl font-light text-white/80">Love Never Dies: Private Afterlife Messaging</p>
+        <div className="mt-8 flex items-center justify-center gap-6">
+          <Link href="#" className="transition-transform hover:scale-105">
+            <img 
+              src="/apple-store.svg" 
+              alt="Download on the App Store" 
+              className="h-12 w-auto md:h-14"
+              style={{ imageRendering: 'crisp-edges' }}
+            />
+          </Link>
+          <Link href="#" className="transition-transform hover:scale-105">
+            <img 
+              src="/google-play.svg" 
+              alt="Get it on Google Play" 
+              className="h-12 w-auto md:h-14"
+              style={{ imageRendering: 'crisp-edges' }}
+            />
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 z-10 text-center">
+        <Link
+          href="/privacy-policy.html"
+          className="text-sm text-white/60 hover:text-white/80 transition-colors"
+        >
+          Privacy Policy
+        </Link>
       </div>
     </div>
   )
