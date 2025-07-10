@@ -9,15 +9,27 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "laters.life | Coming Soon",
-  description: "Something exciting is coming soon.",
-  generator: 'v0.dev',
+  title: "Laters.life | Get it on the App Store",
+  description: "Craft and Share heartfelt messages that transcend time",
+  keywords: "laters, life, messages, afterlife, love, memorial, legacy, goodbye, letters, notes, cards, gifts, flowers, balloons, banners, signs",
+  openGraph: {
+    title: "Laters.life",
+    description: "Craft and Share heartfelt messages that transcend time",
+    images: ['/icon.png'],
+    type: 'website',
+    url: 'https://laters.life',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Laters.life",
+    description: "Craft and Share heartfelt messages that transcend time",
+  },
   icons: {
-    icon: [
-      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: '/favicon.png',
+    icon: '/icon.png',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
   },
 }
 
@@ -32,7 +44,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-
-import './globals.css'
