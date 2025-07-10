@@ -11,7 +11,14 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "laters.life | Coming Soon",
   description: "Something exciting is coming soon.",
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/favicon.png',
+  },
 }
 
 export default function RootLayout({
