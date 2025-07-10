@@ -31,7 +31,7 @@ export default function LandingPage() {
           alt="Laters.life Logo" 
           className="mb-6 h-20 w-auto md:h-24"
         />
-        <h1 className="font-serif text-6xl font-bold tracking-tight text-stone-800 md:text-8xl">laters.life</h1>
+        <h1 className="font-serif text-6xl font-bold tracking-tight text-stone-800 md:text-8xl">Laters.life</h1>
         <p className="mt-6 text-xl font-light text-stone-700/90">Craft and Share heartfelt messages that transcend time</p>
         <div className="mt-8 flex items-center justify-center gap-6">
           <Link href="#" className="transition-transform hover:scale-105">
